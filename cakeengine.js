@@ -9,19 +9,12 @@ var cake = {
 	
 	delayMultiplier:1000,
  
- 	creditsStartTime:6.1,
-	creditsMaxTime:130,
 	creditsEvents:[],
 	creditsEvent:-1,
-
-	blinkerTime:0.3*1000,
- 
- 	maxCredits:14,
 
 	firstLyricsIndex:0,
 	lastCreditsIndex:0,
 	
-	lyricsDelay:1.1*1000,		// when the song starts in the lyrics sequence
 	startTime:0,		// the timestamp that has the "start" of playback (now - curtime), in MS
 	curTime:0,		// where in the song we currently are
 	paused:1,			// Whether playback is paused or not
@@ -72,19 +65,19 @@ var cake = {
 			var canplaymp3=cake.player.canPlayType('audio/mp3');
 			if (canplayogg=='probably')
 			{
-				cake.player.setAttribute('src',song+'.ogg');
+				cake.player.setAttribute('src',data.song+'.ogg');
 			}
 			else if (canplaymp3=='probably')
 			{
-				cake.player.setAttribute('src',song+'.mp3');
+				cake.player.setAttribute('src',data.song+'.mp3');
 			}
 			else if (canplayogg=='maybe')
 			{
-				cake.player.setAttribute('src',song+'.ogg');
+				cake.player.setAttribute('src',data.song+'.ogg');
 			}
 			else if (canplaymp3=='maybe')
 			{
-				cake.player.setAttribute('src',song+'.mp3');
+				cake.player.setAttribute('src',data.song+'.mp3');
 			}
 			else {
 				log("Browser doesn't support Vorbis Audio or Mp3! canplayogg:"+canplayogg+" canplaymp3:"+canplaymp3);
@@ -389,7 +382,7 @@ var cake = {
 			blinker.innerHTML=newChar;
 		
 		setTimeout(function(){
-			cake.blink(blinker)},cake.blinkerTime);
+			cake.blink(blinker)},data.blinkerTime);
 		
 	},
 	
@@ -447,7 +440,7 @@ var cake = {
 		var lyricsSpan=document.createElement("span");
 		cake.lyricsdiv.appendChild(lyricsSpan);
 		
-		var curtime=cake.lyricsDelay;
+		var curtime=data.lyricsDelay;
 		
 		var page=new Page(curtime);
 		cake.lyricsPages.push(page);
@@ -618,21 +611,21 @@ var cake = {
 			this.line.insertBefore(cake.creditsBlinker,invis);
 		}
 		
-		for (var i=0; i<cake.maxCredits; i++)
+		for (var i=0; i<data.maxCredits; i++)
 		{
 			var blank=document.createElement('div');
 			blank.innerHTML='&nbsp;';
 			cake.creditsdiv.appendChild(blank);
 		}
 		
-		var starttime=cake.creditsStartTime*1000;
+		var starttime=data.creditsStartTime*1000;
 		
 		var totalchars=0;
 		for (var index=0; index<credits.length; index++)
 		{
 			totalchars+=credits[index].length+1;
 		}
-		var perchardelay=cake.creditsMaxTime*1000/totalchars;
+		var perchardelay=data.creditsMaxTime*1000/totalchars;
 		
 		var curchar=0;
 		for (var index=0; index<credits.length; index++)
