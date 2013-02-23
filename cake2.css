@@ -1,0 +1,154 @@
+body {
+	background-color: #422D19;
+	padding: 0;
+	margin: 0;
+	font-size: 12pt;
+	font-family: consolas, monospace;
+	font-weight: bold;
+}
+
+#background {
+	padding: 25px;
+	background-color:#6F4C1B;
+	box-shadow: inset 0 -15px 75px 55px #422D19;
+	-moz-box-shadow: inset 0 -15px 75px 55px #422D19;
+	-webkit-box-shadow: inset 0 -15px 75px 55px #422D19;
+	min-height: 470px;
+	min-width: 750px;
+	
+	position: absolute;
+	left:0;
+	top:0;
+	right:0;
+	bottom:0;
+	
+	overflow:hidden;
+}
+
+#scanline {
+	position: absolute;
+	left:-100px;
+	right:-100px;
+	height:100px;
+	top:-200px;
+	
+	/*
+	box-shadow: inset 0 -60px 100px 0px #7F5C1B, inset 0 -6px 3px 5px #9F7C1B;
+	-moz-box-shadow: inset 0 -60px 100px 0px #7F5C1B, inset 0 -6px 3px 5px #9F7C1B;
+	-webkit-box-shadow: inset 0 -60px 100px 0px #7F5C1B, inset 0 -6px 3px 5px #9F7C1B;
+	opacity: 0.3;
+	*/
+	background-image: url('cake2res/scanline.png');
+	background-repeat: repeat-x;
+}
+
+#leftside {
+	border-left: 2px solid rgba(240,182,0,0.24);
+	border-top: 2px solid rgba(240,182,0,0.24);
+	border-bottom: 2px solid rgba(240,182,0,0.24);
+	
+	position: absolute;
+	top: 25px;
+	left: 25px;
+	bottom: 20px;
+	right: 452px;
+}
+
+#rightside {
+	position: absolute;
+	width: 430px;
+	top: 25px;
+	bottom: 20px;
+	right: 20px;
+	text-align: right;
+	
+	border-right: 2px solid rgba(240,182,0,0.24);
+	border-bottom: 2px solid rgba(240,182,0,0.24);
+}
+
+#upperright {
+	position: relative;
+	right: 0px;
+	top: -5px;	
+}
+
+#upperright * {
+	display: inline-block;
+}
+
+#upperright #scrollybox, #upperright #numbers, #upperright #logo {
+	border: 2px solid rgba(240,182,0,0.27);
+	vertical-align: top;
+}
+
+#upperright #scrollybox {
+	height: 88px;
+	width: 217px;
+	text-align: center;
+}
+
+#upperright #numbers {
+	padding: 2px;
+	color: rgba(240,182,0,0.27);
+	height: 84px;
+	width: 36px;
+	overflow: hidden;
+}
+
+#upperright #logo {
+	padding: 9px;
+	height: 70px;
+	width: 70px;
+}
+
+#upperright #leftscrollybox, #upperright #rightscrollybox {
+	width: 100px;
+	height: 82px;
+	background-image: url('cake2res/bits.png');
+	background-repeat: repeat-y;
+	margin: 2px;
+}
+
+#upperright #rightscrollybox {
+	background-position: 0 90px;
+}
+
+#upperright .upperrightgap {
+	border-top: 2px solid rgba(240,182,0,0.27);
+	position: relative;
+	top: 5px;
+	display: inline-block;
+	width:5px;
+}
+#upperright #upperrightgap1 {
+	width: 50px;
+}
+#upperright #upperrightgap4 {
+	width: 13px;
+}
+
+#lyrics {
+	margin-left:40px;
+	margin-top:40px;
+	line-height: 1.55em;
+	color: rgba(240,182,0,0.24);
+}
+
+#lyricstext {
+	text-align: left;
+
+}
+
+#credits {
+	position:relative;
+	padding-right: 32px;
+	padding-top: 5px;
+}
+#creditstext {
+	text-align: right;
+	color: rgba(0,0,0,0.25);
+	line-height: 18pt;
+}
+#creditstext span.invisible {
+	visibility: hidden;
+}
