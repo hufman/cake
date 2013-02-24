@@ -38,6 +38,9 @@ var cake = {
 		cake.lyricsdiv=document.getElementById('lyricstext');
 		cake.creditsdiv=document.getElementById('creditstext');
 
+		cake.drawLyricsBorder();
+		cake.drawCreditsBorder();
+
 		cake.initCredits();
 		
 		cake.initLyrics();
@@ -107,16 +110,16 @@ var cake = {
 			horiztext+='-';
 		}
 		var left=document.getElementById('lyricsleft');
-		left.innerHTML=verttext;
+		if (left) left.innerHTML=verttext;
 
 		var top=document.getElementById('lyricstop');
-		top.innerHTML=horiztext;
+		if (top) top.innerHTML=horiztext;
 		
 		var right=document.getElementById('lyricsright');
-		right.innerHTML=verttext;
+		if (right) right.innerHTML=verttext;
 		
 		var bottom=document.getElementById('lyricsbottom');
-		bottom.innerHTML=horiztext;
+		if (bottom) bottom.innerHTML=horiztext;
 		
 	},
 	drawCreditsBorder: function()
@@ -133,16 +136,16 @@ var cake = {
 		}
 		
 		var left=document.getElementById('creditsleft');
-		left.innerHTML=verttext;
+		if (left) left.innerHTML=verttext;
 
 		var top=document.getElementById('creditstop');
-		top.innerHTML=horiztext;
-	
+		if (top) top.innerHTML=horiztext;
+
 		var right=document.getElementById('creditsright');
-		right.innerHTML=verttext;
+		if (right) right.innerHTML=verttext;
 
 		var bottom=document.getElementById('creditsbottom');
-		bottom.innerHTML=horiztext;
+		if (bottom) bottom.innerHTML=horiztext;
 	},
 	
 	initBlinker: function()
@@ -388,7 +391,23 @@ var cake = {
 	
 	initLyrics: function()
 	{
-	
+
+		function ChangePicture(starttime, parentelement, pictureindex) {
+			this.starttime = starttime;
+			this.parentelement = parentelement;
+			this.pictureindex = pictureindex;
+		}
+		ChangePicture.prototype.getStartTime = function() {
+			return this.starttime;
+		};
+		ChangePicture.prototype.run = function() {
+			this.oldpicture = cake.pictureindex;
+			cake.setPicture(this.parentelement, this.pictureindex);
+		};
+		ChangePicture.prototype.undo = function() {
+			cake.setPicture(this.parentelement, this.oldpicture);
+		};
+
 		function NewLetter(starttime, parentelement, letter) {
 			this.starttime=starttime;
 			this.parentelement=parentelement;
@@ -435,13 +454,14 @@ var cake = {
 			this.events[this.events.length]=object;
 			//log("Added event to this page, index: "+oldlength+" new length: "+this.events.length);
 		}
-		
-		
+
+		var pictureDiv = document.getElementById('picturetext');
+
 		var lyricsSpan=document.createElement("span");
 		cake.lyricsdiv.appendChild(lyricsSpan);
-		
+
 		var curtime=data.lyricsDelay;
-		
+
 		var page=new Page(curtime);
 		cake.lyricsPages.push(page);
 		for (var index=0; index<lyrics.length; index++)
@@ -449,6 +469,11 @@ var cake = {
 			var lyric=lyrics[index];
 			var line=lyric.text;
 			var delay=lyric.delay*1000;
+
+			if (pictureDiv && lyric['changepicture'] > -1) {
+				var event = new ChangePicture(curtime, pictureDiv, lyric['changepicture']);
+				page.push(event);
+			}
 			for (var lindex=0; lindex<line.length; lindex++)
 			{
 				//if (index==0 && lindex==0) alert(line.length);
@@ -519,6 +544,26 @@ var cake = {
 		}
 	},
 	
+	setPicture: function(parentelement, pictureindex)
+	{
+		cake.pictureindex = pictureindex
+		parentelement.innerHTML = '';
+		var curart = asciiart[pictureindex + ''];
+		if (curart) {
+			for (var i = 0; i < curart.length; i++) {
+				var node = document.createElement("div");
+
+				var curline = curart[i];
+				curline = curline.replace(/</g, "&lt;");
+				curline = curline.replace(/>/g, "&gt;");
+				curline = curline.replace(/ /g, "&nbsp;");
+				node.innerHTML = curline;
+
+				parentelement.appendChild(node);
+			}
+		}
+	},
+
 	initCredits: function()
 	{
 		function TimedEvent(starttime) {
@@ -669,8 +714,10 @@ var cake = {
 	
 	runAnimations: function()
 	{
-		cake.animationData.last=new Date().getTime();
-		cake.processAnimations();
+		if (document.getElementById('leftscrollybox')) {
+			cake.animationData.last=new Date().getTime();
+			cake.processAnimations();
+		}
 	},
 	
 	processAnimations: function()
