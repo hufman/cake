@@ -158,9 +158,12 @@ var cake = {
 		}
 		if (!cake.creditsBlinker)
 		{
+			var linediv=document.createElement("div");
+			linediv.innerHTML="&nbsp;";
 			cake.creditsBlinker=document.createElement("span");
 			cake.creditsBlinker.id="creditsBlinker";
-			cake.creditsdiv.appendChild(cake.creditsBlinker);
+			linediv.insertBefore(cake.creditsBlinker, linediv.childNodes[0]);
+			cake.creditsdiv.appendChild(linediv);
 			cake.blink(cake.creditsBlinker);
 		}
 	},
