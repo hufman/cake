@@ -4,8 +4,8 @@ function log(str)
 		console.log(str);
 }
 var cake = {
-	seekForwardTime:1000,
-	seekBackwardTime:1000,
+	seekForwardTime:5000,
+	seekBackwardTime:5000,
 	
 	delayMultiplier:1000,
  
