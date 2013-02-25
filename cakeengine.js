@@ -585,6 +585,7 @@ var cake = {
 
 	setPicture: function(parentelement, pictureindex)
 	{
+		if (! parentelement) return;
 		cake.pictureindex = pictureindex
 		parentelement.innerHTML = '';
 		var curart = asciiart[pictureindex + ''];
