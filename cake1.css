@@ -1,7 +1,8 @@
 body {
-	color: yellow;
-	font-family:  monospace;
-	font-size: 9pt;
+	color: #dba427;
+	font-family: 'Courier New', Courier, monospace;
+	font-weight: bold;
+	font-size: 10pt;
 	line-height: 1.60em;
 	background-color:black;
 }
@@ -10,8 +11,8 @@ body {
 	position:absolute;
 	left:2em;
 	top:2em;
-	width: 30em;
-	height: 52em;
+	width: 29em;
+	height: 50.5em;
 }
 
 #lyricstext {
@@ -40,7 +41,7 @@ body {
 
 #lyricstop,#lyricsbottom {
 	position:absolute;
-	left:0em;
+	left:-0.5em;
 	width:30em;
 	height:1em;
 	text-align: center;
