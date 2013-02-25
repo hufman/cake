@@ -276,8 +276,10 @@ var cake = {
 		cake.pause();
 		if (cake.player)
 		{
-			cake.player.currentTime+=distance/1000;
-			cake.curTime=cake.player.currentTime*1000;
+			var newtime = cake.player.currentTime += distance/1000;
+			var newtime = Math.max(0, newtime);
+			cake.player.currentTime = newtime;
+			cake.curTime=newtime*1000;
 		}
 		else
 		{
@@ -343,7 +345,17 @@ var cake = {
 	
 	seekLyricsForward: function()
 	{
-		// Nothing special to be done here
+		var curpage=cake.lyricsPages[cake.lyricsPage];
+
+		while (curpage.get(cake.lyricsEvent) && curpage.get(cake.lyricsEvent).getStartTime()<cake.curTime)
+		{
+			var curevent=curpage.get(cake.lyricsEvent);
+			if (curevent && curevent.run)
+			{
+				curevent.run();
+			}
+			cake.lyricsEvent++;
+		}
 	},
 	
 	seekCredits: function(distance)
@@ -354,6 +366,14 @@ var cake = {
 			{
 				cake.creditsEvents[cake.creditsEvent].undo();
 				cake.creditsEvent--;
+			}
+		}
+		else
+		{
+			while (cake.creditsEvents[cake.creditsEvent] && cake.creditsEvents[cake.creditsEvent].getStartTime()<cake.curTime)
+			{
+				cake.creditsEvents[cake.creditsEvent].run();
+				cake.creditsEvent++
 			}
 		}
 	},
