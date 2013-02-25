@@ -492,6 +492,16 @@ for line in inlyricstext.split('\n'):
 
 outputlines=[]
 
+outputlines.extend([
+'var data = {',
+'	song: "cake2res/want_you_gone",',
+'	creditsStartTime: 6.1,',
+'	creditsMaxTime: 130,',
+'	blinkerTime: 0.3 * 1000,',
+'	maxCredits: 14,',
+'	lyricsDelay: 1.1 * 1000		// when the song starts in the lyrics sequence',
+'};'])
+
 outputlines.append('')
 outputlines.append('var credits=[')
 for line in credits:
