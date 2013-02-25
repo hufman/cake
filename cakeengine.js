@@ -229,7 +229,7 @@ var cake = {
 		{
 			if (cake.player)
 			{
-				log("Fixing starttime by "+(cake.startTime - (new Date().getTime()-cake.curTime)));
+				//log("Fixing starttime by "+(cake.startTime - (new Date().getTime()-cake.curTime)));
 				cake.curTime=cake.player.currentTime*1000;
 				cake.startTime=new Date().getTime()-cake.curTime;
 				cake.player.play();
@@ -278,6 +278,7 @@ var cake = {
 		{
 			var newtime = cake.player.currentTime += distance/1000;
 			var newtime = Math.max(0, newtime);
+			var newtime = Math.min(newtime, cake.player.duration - 0.5);
 			cake.player.currentTime = newtime;
 			cake.curTime=newtime*1000;
 		}
@@ -309,7 +310,7 @@ var cake = {
 	{
 		if (cake.lyricsPage>=cake.lyricsPages.length)
 			cake.lyricsPage=cake.lyricsPages.length-1;
-		if (cake.curTime>cake.lyricsPages[cake.lyricsPage].getStartTime())	// still on the same page
+		if (cake.lyricsPage == 0 || cake.curTime>=cake.lyricsPages[cake.lyricsPage].getStartTime())	// still on the same page
 		{
 			var curpage=cake.lyricsPages[cake.lyricsPage];
 
@@ -329,10 +330,11 @@ var cake = {
 			}
 
 			var curpage=cake.lyricsPages[cake.lyricsPage];
+			cake.lyricsEvent = -1;
 
-			while (curpage.get(cake.lyricsEvent) && curpage.get(cake.lyricsEvent).getStartTime()<cake.curTime)
+			while (curpage.get(cake.lyricsEvent+1) && curpage.get(cake.lyricsEvent+1).getStartTime()<cake.curTime)
 			{
-				var curevent=curpage.get(cake.lyricsEvent);
+				var curevent=curpage.get(cake.lyricsEvent+1);
 				if (curevent && curevent.run)
 				{
 					curevent.run();
@@ -347,9 +349,9 @@ var cake = {
 	{
 		var curpage=cake.lyricsPages[cake.lyricsPage];
 
-		while (curpage.get(cake.lyricsEvent) && curpage.get(cake.lyricsEvent).getStartTime()<cake.curTime)
+		while (curpage && curpage.get(cake.lyricsEvent+1) && curpage.get(cake.lyricsEvent+1).getStartTime()<cake.curTime)
 		{
-			var curevent=curpage.get(cake.lyricsEvent);
+			var curevent=curpage.get(cake.lyricsEvent+1);
 			if (curevent && curevent.run)
 			{
 				curevent.run();
@@ -370,9 +372,9 @@ var cake = {
 		}
 		else
 		{
-			while (cake.creditsEvents[cake.creditsEvent] && cake.creditsEvents[cake.creditsEvent].getStartTime()<cake.curTime)
+			while (cake.creditsEvents[cake.creditsEvent+1] && cake.creditsEvents[cake.creditsEvent+1].getStartTime()<cake.curTime)
 			{
-				cake.creditsEvents[cake.creditsEvent].run();
+				cake.creditsEvents[cake.creditsEvent+1].run();
 				cake.creditsEvent++
 			}
 		}
@@ -415,10 +417,11 @@ var cake = {
 	initLyrics: function()
 	{
 
-		function ChangePicture(starttime, parentelement, pictureindex) {
+		function ChangePicture(starttime, parentelement, pictureindex, newpage) {
 			this.starttime = starttime;
 			this.parentelement = parentelement;
 			this.pictureindex = pictureindex;
+			this.newpage = newpage;
 		}
 		ChangePicture.prototype.getStartTime = function() {
 			return this.starttime;
@@ -428,20 +431,25 @@ var cake = {
 			cake.setPicture(this.parentelement, this.pictureindex);
 		};
 		ChangePicture.prototype.undo = function() {
-			cake.setPicture(this.parentelement, this.oldpicture);
+			if (!this.newpage)
+				cake.setPicture(this.parentelement, this.oldpicture);
 		};
 
 		function NewLetter(starttime, parentelement, letter) {
 			this.starttime=starttime;
 			this.parentelement=parentelement;
 			this.letter=letter;
+			this.ran = 0;
 		}
 		NewLetter.prototype.getStartTime=function() {
 			return this.starttime;
 		}
 		NewLetter.prototype.run=function() {
+			if (this.ran)
+				this.ran = this.ran + 0;
 			this.oldlength=this.parentelement.innerHTML.length;
 			this.parentelement.innerHTML=this.parentelement.innerHTML+this.letter;
+			this.ran = 1;
 		}
 		NewLetter.prototype.undo=function() {
 			this.parentelement.innerHTML=this.parentelement.innerHTML.substring(0,this.oldlength);
@@ -483,10 +491,15 @@ var cake = {
 		var lyricsSpan=document.createElement("span");
 		cake.lyricsdiv.appendChild(lyricsSpan);
 
+		var curPicture = -1;	// keep track of picture, to create a ChangePicture at the top of a page
 		var curtime=data.lyricsDelay;
 
 		var page=new Page(curtime);
 		cake.lyricsPages.push(page);
+		var firstpage=new NewPage(curtime,lyricsSpan);
+		page.push(firstpage);
+		var event = new ChangePicture(curtime, pictureDiv, curPicture, true);
+		page.push(event);
 		for (var index=0; index<lyrics.length; index++)
 		{
 			var lyric=lyrics[index];
@@ -495,6 +508,7 @@ var cake = {
 
 			if (pictureDiv && lyric['changepicture'] > -1) {
 				var event = new ChangePicture(curtime, pictureDiv, lyric['changepicture']);
+				curPicture = lyric['changepicture'];
 				page.push(event);
 			}
 			for (var lindex=0; lindex<line.length; lindex++)
@@ -515,6 +529,8 @@ var cake = {
 				var event=new NewPage(curtime,lyricsSpan);
 				page.push(event);
 				page=new Page(curtime);
+				page.push(event);
+				var event = new ChangePicture(curtime, pictureDiv, curPicture, true);
 				page.push(event);
 				cake.lyricsPages.push(page);
 			}
