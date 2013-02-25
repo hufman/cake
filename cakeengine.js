@@ -613,6 +613,20 @@ var cake = {
 			return this.starttime;
 		}
 
+		function BeginningSeekBlinker(starttime, parentelement) {
+			// when seeking backwards through the credits,
+			// this event will re-add the blinker
+			this.starttime = starttime;
+			this.parentelement = parentelement;
+		}
+		BeginningSeekBlinker.prototype=new TimedEvent;
+		BeginningSeekBlinker.prototype.constructor = BeginningSeekBlinker;
+		BeginningSeekBlinker.prototype.run = function() {};
+		BeginningSeekBlinker.prototype.undo = function() {
+			var lastline = this.parentelement.childNodes[this.parentelement.childNodes.length-1];
+			lastline.insertBefore(cake.creditsBlinker, lastline.childNodes[0]);
+		};
+
 		function NewLine(starttime, parentelement, text) {
 			this.starttime=starttime;
 			this.parentelement=parentelement;
@@ -713,6 +727,7 @@ var cake = {
 		var perchardelay=data.creditsMaxTime*1000/totalchars;
 
 		var curchar=0;
+		this.creditsEvents.push(new BeginningSeekBlinker(starttime, cake.creditsdiv));
 		for (var index=0; index<credits.length; index++)
 		{
 			var temp=new NewLine(starttime+perchardelay*curchar, cake.creditsdiv, credits[index]);
