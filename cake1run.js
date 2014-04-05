@@ -102,57 +102,69 @@ var cake1 = {
 		setTimeout(function (){
 			cake1.blink(blinker)
 		}, data.blinkerTime);
-
 	},
 
 	initLyrics: function ()
 	{
 
-		var ChangePicture = function (starttime, parentelement, pictureindex, newpage) {
+		var ChangePicture = function (starttime, parentelement, oldpicture, pictureindex) {
 			this.startTime = starttime;
 			this.parentelement = parentelement;
+			this.oldpicture = oldpicture;
 			this.pictureindex = pictureindex;
-			this.newpage = newpage;
 		};
 		ChangePicture.prototype.run = function () {
-			this.oldpicture = cake1.pictureindex;
 			cake1.setPicture(this.parentelement, this.pictureindex);
 		};
 		ChangePicture.prototype.undo = function () {
-			if (!this.newpage) {
-				cake1.setPicture(this.parentelement, this.oldpicture);
-			}
+			cake1.setPicture(this.parentelement, this.oldpicture);
 		};
+		ChangePicture.prototype.keyframe = true;
+		ChangePicture.prototype.undokeyframe = true;
 
 		var NewLetter = function (starttime, parentelement, letter) {
 			this.startTime = starttime;
 			this.parentelement = parentelement;
 			this.letter = letter;
-			this.ran = 0;
 		};
 		NewLetter.prototype.run = function () {
-			if (this.ran)
-				this.ran = this.ran + 0;
-			this.oldlength = this.parentelement.innerHTML.length;
 			this.parentelement.innerHTML = this.parentelement.innerHTML+this.letter;
-			this.ran = 1;
 		};
 		NewLetter.prototype.undo = function () {
-			this.parentelement.innerHTML = this.parentelement.innerHTML.substring(0,this.oldlength);
+			var html = this.parentelement.innerHTML;
+			var previndex = html.length - 1;
+			if (html.substr(previndex, 1) == '>') {
+				// <br> tags
+				previndex = html.lastIndexOf('<');
+			} else {
+				// anything else
+				if (this.letter.length>1) {
+					previndex = previndex;
+				}
+				previndex = html.length - this.letter.length;
+			}
+			html = html.substring(0, previndex);
+			this.parentelement.innerHTML = html;
 		};
 
 		var NewPage = function (starttime, parentelement) {
 			this.startTime = starttime;
 			this.parentelement = parentelement;
-			this.prevpage = '';
 		};
 		NewPage.prototype.run = function () {
-			this.prevpage = this.parentelement.innerHTML;
 			this.parentelement.innerHTML = '';
 		};
-		NewPage.prototype.undo = function () {
-			this.parentelement.innerHTML = this.prevpage;
+		NewPage.prototype.keyframe = true;
+
+		var UndoNewPage = function (starttime, parentelement, page) {
+			this.startTime = starttime;
+			this.parentelement = parentelement;
+			this.page = page
 		};
+		UndoNewPage.prototype.undo = function () {
+			this.parentelement.innerHTML = this.page;
+		};
+		UndoNewPage.prototype.undokeyframe = true;
 
 		var pictureDiv = document.getElementById('picturetext');
 
@@ -162,40 +174,52 @@ var cake1 = {
 		var curPicture = -1;	// keep track of picture, to create a ChangePicture at the top of a page
 		var curtime = data.lyricsDelay;
 
+		var page = '';
 		var firstpage = new NewPage(curtime,lyricsSpan);
 		cake1.engine.addEvent('lyrics', firstpage);
-		var event = new ChangePicture(curtime, pictureDiv, curPicture, true);
-		cake1.engine.addEvent('lyrics', event);
+		var event = new ChangePicture(curtime, pictureDiv, curPicture, curPicture);
+		cake1.engine.addEvent('picture', event);
 		for (var index = 0; index<lyrics.length; index++)
 		{
 			var lyric = lyrics[index];
 			var line = lyric.text;
 			var delay = lyric.delay*1000;
 
-			if (pictureDiv && lyric['changepicture'] > -1) {
-				var event = new ChangePicture(curtime, pictureDiv, lyric['changepicture']);
+			if (lyric['changepicture'] > -1) {
+				var event = new ChangePicture(curtime, pictureDiv, curPicture, lyric['changepicture']);
 				curPicture = lyric['changepicture'];
-				cake1.engine.addEvent('lyrics', event);
+				cake1.engine.addEvent('picture', event);
 			}
 			for (var lindex = 0; lindex<line.length; lindex++)
 			{
 				//if (index==0 && lindex==0) alert(line.length);
 				var char = line.substring(lindex,lindex+1);
+				char = char.replace(/&/g, "&amp;");
+				char = char.replace(/</g, "&lt;");
+				char = char.replace(/>/g, "&gt;");
+				char = char.replace(/ /g, "&nbsp;");
 				var event = new NewLetter(curtime+lindex/line.length*delay, lyricsSpan, char);
 				cake1.engine.addEvent('lyrics', event);
+				page += char;
 			}
 			curtime += delay;
 			if (lyric.newline)
 			{
 				var event = new NewLetter(curtime,lyricsSpan, '<br />');
 				cake1.engine.addEvent('lyrics', event);
+				page += '<br />';
 			}
 			if (lyric.clear)
 			{
-				var event = new NewPage(curtime,lyricsSpan);
+				var event = new UndoNewPage(curtime, lyricsSpan, page);
 				cake1.engine.addEvent('lyrics', event);
-				var event = new ChangePicture(curtime, pictureDiv, curPicture, true);
+				page = '';
+				var event = new NewPage(curtime, lyricsSpan);
 				cake1.engine.addEvent('lyrics', event);
+				// clear picture field
+				var event = new ChangePicture(curtime, pictureDiv, curPicture, -1);
+				curPicture = -1;
+				cake1.engine.addEvent('picture', event);
 			}
 		}
 	},
@@ -208,15 +232,16 @@ var cake1 = {
 		var curart = asciiart[pictureindex + ''];
 		if (curart) {
 			for (var i = 0; i < curart.length; i++) {
-				var node = document.createElement("div");
+				var line = document.createElement("div");
 
 				var curline = curart[i];
+				curline = curline.replace(/&/g, "&amp;");
 				curline = curline.replace(/</g, "&lt;");
 				curline = curline.replace(/>/g, "&gt;");
 				curline = curline.replace(/ /g, "&nbsp;");
-				node.innerHTML = curline;
+				line.innerHTML = curline;
 
-				parentelement.appendChild(node);
+				parentelement.appendChild(line);
 			}
 		}
 	},

@@ -33,6 +33,9 @@
 	};
 	TimedEvent.prototype.undo = function() {
 	};
+	TimedEvent.prototype.keyframe = false;		// can jump forwards directly to this
+	TimedEvent.prototype.undokeyframe = false;	// can jump backwards directly to this
+	TimedEvent.prototype.statefulundo = false;	// can't skip forward past this event
 
 	var Timeline = function () {
 		this.events = [];
@@ -244,15 +247,66 @@
 	};
 
 	var seekTimeline = function (distance, curTime, timeline) {
-		while (timeline.events[timeline.index] &&
-		       timeline.events[timeline.index].startTime>curTime) {
-			timeline.events[timeline.index].undo();
-			timeline.index--;
+		var curframe;
+		// needing to seek backwards
+		var undoframe = timeline.events[timeline.index];
+		if (undoframe && undoframe.startTime>curTime) {
+			var foundundos = false || undoframe.undo;
+			var index = timeline.index;
+			curframe = timeline.events[index];
+			while (curframe) {
+				foundundos = foundundos || curframe.undo;
+				if (curframe.undokeyframe) {
+					console.log("Found undo keyframe at "+index);
+					undoframe = curframe;
+				}
+				if (curframe.startTime < curTime) {	// maybe should stop
+					if (foundundos) {	// can do normal rewind
+						break;
+					}
+					if (!foundundos && curframe.keyframe) {	// earlier keyframe
+						index--;
+						undoframe = null;	// don't try rewinding
+						break;
+					}
+				}
+				index--; curframe = timeline.events[index];
+			}
 		}
-		while (timeline.events[timeline.index+1] &&
-		       timeline.events[timeline.index+1].startTime<curTime) {
-			timeline.events[timeline.index+1].run();
+
+		// do the backwards seek
+		while (undoframe && undoframe.startTime>curTime) {
+			if (undoframe.undo) {
+				undoframe.undo();
+			}
+			timeline.index--;
+			undoframe = timeline.events[timeline.index];
+		}
+
+		// needing to seek forwards
+		var nextframe = timeline.events[timeline.index+1];
+		if (nextframe && nextframe.startTime<curTime) {
+			var nextindex = timeline.index + 1;
+			curframe = timeline.events[nextindex];
+			while (curframe && curframe.startTime <= curTime) {
+				if (curframe.keyframe) {	// found a keyframe
+					console.log("Found forward keyframe at "+nextindex);
+					nextframe = curframe;
+				}
+				if (curframe.statefulundo) {	// can't skip this one
+					console.log("Stopped looking for keyframes because stateful undo");
+					break;
+				}
+				nextindex++; curframe = timeline.events[nextindex];
+			}
+		}
+		// do the forwards seek
+		while (nextframe && nextframe.startTime <= curTime) {
+			if (nextframe.run) {
+				nextframe.run();
+			}
 			timeline.index++
+			nextframe = timeline.events[timeline.index+1];
 		}
 	};
 
@@ -277,7 +331,7 @@
 
 	var addEvent = function(timelineName, event) {
 		if (typeof event.startTime === 'undefined') {
-			console.log("New event for "+timelineName+" is missing startTime", event);
+			console.debug("New event for "+timelineName+" is missing startTime", event);
 			return;
 		}
 		if (!timelines.hasOwnProperty(timelineName)) {
@@ -356,7 +410,7 @@
 				nexttimeline = timelineName;
 				nextindex = timeline.index+1;
 			} else {
-				if (curevent.startTime < nextevent.startTime) {
+				if (curevent && curevent.startTime < nextevent.startTime) {
 					nextevent = curevent;
 					nexttimeline = timelineName;
 					nextindex = timeline.index+1;
@@ -365,8 +419,8 @@
 		}
 		curTime = new Date().getTime() - startTime;
 		if (nextevent) {
-			var delay = nextevent.startTime-curTime;
-			console.log("Scheduling " + nexttimeline + " event "+(nextindex)+" for "+delay);
+			var delay = nextevent.startTime - curTime;
+			console.debug("Scheduling "+nexttimeline+" event "+(nextindex)+" for "+delay);
 			timers['events'] = setTimeout(runEvent, delay);
 		} else {
 			console.log("End of events");
@@ -382,9 +436,11 @@
 			nextevent = timeline.events[timeline.index+1];
 			curTime = new Date().getTime() - startTime;
 			while (!paused && nextevent && nextevent.startTime <= curTime) {
-				console.log("Running event "+(timeline.index+1));
+				console.debug("Running "+timelineName+" event "+(timeline.index+1));
 				timeline.index++;
-				nextevent.run();
+				if (nextevent.run) {
+					nextevent.run();
+				}
 				nextevent = timeline.events[timeline.index+1];
 			}
 		}
